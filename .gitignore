@@ -1,0 +1,18 @@
+# Build products and local IDE/debug state
+**/Debug/
+**/Release/
+**/.settings/
+**/.metadata/
+**/.mxproject
+*.launch
+*.elf
+*.bin
+*.hex
+*.map
+*.o
+*.d
+*.su
+*.log
+build/
+.DS_Store
+Thumbs.db
