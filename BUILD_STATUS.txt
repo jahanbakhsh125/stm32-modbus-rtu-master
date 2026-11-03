@@ -1,4 +1,4 @@
-Build-PrÃ¼fung: 03.11.2026
+Build-Prüfung: 03.11.2026
 Toolchain: arm-none-eabi-gcc.exe (GNU Tools for STM32 12.3.rel1.20240612-1315) 12.3.1 20230626
 
 Debug: 23 Quelldateien; 0 Compile-Fehler; Linken erfolgreich; 3 Compiler-/Linker-Warnungen.
@@ -10,4 +10,4 @@ firmware/modbus_rtu_7\modbus\modbus.c:192:50: warning: unused parameter 'huart' 
 firmware/modbus_rtu_7\modbus\modbus.c:229:50: warning: unused parameter 'huart' [-Wunused-parameter]
 ld: warning: build\stm32-modbus-rtu-master\Release\firmware.elf has a LOAD segment with RWX permissions
 
-PrÃ¼fung direkt mit Arm-GCC aus der installierten STM32CubeIDE-Toolchain, nicht durch einen IDE-Import. Die IDE-Projektdateien wurden als XML geprÃ¼ft; vollstÃ¤ndiger IDE-Import/Build noch offen. Keine Hardwaretests oder Flash-VorgÃ¤nge. Warnungen und dokumentierte Funktionsfehler sind noch zu bearbeiten.
+Prüfung direkt mit Arm-GCC aus der installierten STM32CubeIDE-Toolchain, nicht durch einen IDE-Import. Die IDE-Projektdateien wurden als XML geprüft; vollständiger IDE-Import/Build noch offen. Keine Hardwaretests oder Flash-Vorgänge. Warnungen und dokumentierte Funktionsfehler sind noch zu bearbeiten.

@@ -1,59 +1,100 @@
-# STM32 Modbus RTU Master
+# STM32 Modbus RTU Master über RS485
 
-Firmware-Demonstrator fÃ¼r zyklische Modbus-RTU-Kommunikation Ã¼ber RS485. Die Anwendung verbindet UART-DMA, CRC16-PrÃ¼fung und eine timergetriebene Telegrammfolge mit digitalen Ein-/AusgÃ¤ngen und einem ADC-Wert.
+Dieses Embedded-Projekt zeigt den zyklischen Austausch digitaler Signale und
+analoger Messwerte zwischen einem STM32F103C8 und einer Modbus-Gegenstelle.
+Die Firmware nutzt USART2 mit DMA, eine CRC16-Prüfung und einen Timer zur
+Steuerung der Telegrammfolge.
 
-**Status:** Dokumentierter Entwicklungsstand. Noch kein nachgewiesener Hardwaretest dieser bereinigten Kopie; bekannte Fehler sind offen. Keine Aussage zur Produktionsreife.
+## Funktionen
 
-## Technischer Umfang
+- Digitale Eingangszustände als Modbus-Coils übertragen.
+- Einen ADC-Wert über Register-Telegramme bereitstellen.
+- Digitale Zustände und Registerwerte der Gegenstelle abfragen.
+- Zwischen Senden und Empfangen über eine GPIO-gesteuerte RS485-Richtung umschalten.
+- Telegramme anhand ihrer CRC16 prüfen und den Ablauf über UART-Callbacks fortsetzen.
 
-- Zielcontroller laut Projektdateien: STM32F103C8Tx.
-- USART2 mit DMA-Empfang und DMA-Senden; 9600 Baud, gerade ParitÃ¤t, ein Stopbit; HAL-Konfiguration: 9-Bit-WortlÃ¤nge mit ParitÃ¤t.
-- GPIO-gesteuerte RS485-Senderichtung fÃ¼r einen im Code als MAX485 bezeichneten Transceiver.
-- CRC16 und Funktionscodes `0x0F`, `0x10`, `0x02`, `0x03`.
-- TIM4 startet die nÃ¤chste Ãœbertragung; UART-Callbacks setzen die Abfolge fort.
+Die Anwendung verwendet Slave-Adresse `1` und eine feste Registerbelegung.
+Sie eignet sich als Entwicklungsbeispiel für einen konkreten Kommunikationsablauf.
 
-## Ablauf im vorhandenen Code
+## Technischer Aufbau
 
-`Digitale EingÃ¤nge â†’ Write Multiple Coils â†’ ADC-Wert / Write Multiple Registers â†’ Read Discrete Inputs â†’ Read Holding Registers â†’ Wiederholung`
+| Bestandteil | Verwendung |
+|---|---|
+| Mikrocontroller | STM32F103C8Tx |
+| Kommunikation | Modbus RTU über RS485 |
+| UART | USART2 mit DMA für Senden und Empfangen |
+| Übertragungsparameter | 9600 Baud, gerade Parität, ein Stopbit |
+| HAL-UART-Konfiguration | 9-Bit-Wortlänge mit aktivierter Parität |
+| RS485-Richtung | GPIO-Steuerung; Transceiver im Code als MAX485 bezeichnet |
+| Ablaufsteuerung | TIM4 und UART-Callbacks |
+| Daten | Digitale Ein-/Ausgänge und ADC-Messwert |
 
-Die Firmware ist auf eine Gegenstelle mit Slave-Adresse `1` und einer festen Registerbelegung zugeschnitten. Sie ist keine allgemeine Modbus-Bibliothek.
+## Kommunikationsablauf
 
-## Projektstruktur
+```mermaid
+flowchart TD
+    A[Digitale Eingänge lesen] --> B[Coils schreiben: 0x0F]
+    B --> C[ADC-Wert als Register schreiben: 0x10]
+    C --> D[Digitale Eingänge der Gegenstelle lesen: 0x02]
+    D --> E[Register der Gegenstelle lesen: 0x03]
+    E --> A
+```
+
+Die konkreten Pins und Telegrammadressen stehen in der
+[Hardware- und Schnittstellenbeschreibung](docs/HARDWARE.md).
+
+## Projektdateien
 
 | Pfad | Inhalt |
 |---|---|
-| `firmware/modbus_rtu_7/Core` | Einstieg, Systeminitialisierung und Interrupts |
-| `firmware/modbus_rtu_7/modbus/modbus.c` | Zustandsfolge, GPIO und UART-Callbacks |
+| `firmware/modbus_rtu_7/Core/` | Programmeinstieg, Initialisierung und Interrupts |
+| `firmware/modbus_rtu_7/modbus/modbus.c` | Telegrammfolge, GPIO und UART-Callbacks |
 | `firmware/modbus_rtu_7/modbus/rtu.c` | Telegrammvorlagen und CRC16 |
-| `firmware/modbus_rtu_7/Drivers` | Mitgelieferte STM32-HAL-/CMSIS-Dateien |
-| `docs/HARDWARE.md` | Aus dem Code abgeleitete AnschlÃ¼sse und Register |
-| `docs/VALIDIERUNG.md` | Offene Fehler und nachvollziehbare TestfÃ¤lle |
+| `firmware/modbus_rtu_7/Drivers/` | STM32-HAL- und CMSIS-Komponenten |
+| `tools/build.py` | Build mit Arm-GCC ohne IDE |
+| [Prüfplan](docs/VALIDIERUNG.md) | Bekannte Funktionsprobleme und Testfälle |
+| [Build-Protokoll](BUILD_STATUS.txt) | Dokumentierte Build-Ergebnisse und Warnungen |
 
-## Build und Inbetriebnahme
+## Projekt bauen
 
-1. STM32CubeIDE mit STM32F1-UnterstÃ¼tzung bereitstellen.
-2. `firmware/modbus_rtu_7` als bestehendes Projekt in einen neuen Workspace importieren.
-3. Projektname `modbus_rtu_7` beibehalten. Include-Verzeichnisse und Quellordner wurden fÃ¼r Debug und Release in der Projektdatei vereinheitlicht.
-4. ZunÃ¤chst `Debug`, anschlieÃŸend `Release` bauen; Ergebnis und Toolchain-Version dokumentieren.
-5. Erst nach PrÃ¼fung des tatsÃ¤chlichen Boards, Transceiver-Moduls und der Gegenstelle flashen und die Tests aus `docs/VALIDIERUNG.md` ausfÃ¼hren.
+### Mit Python und Arm-GCC
 
-Die `.ioc` bildet zusÃ¤tzliche Registerkonfiguration in `modbus.c` nicht vollstÃ¤ndig ab. Eine automatische Neugenerierung kann Anwendungscode verÃ¤ndern; nicht ungeprÃ¼ft regenerieren.
+Voraussetzungen sind Python 3 und `arm-none-eabi-gcc` mit Newlib/Nano-Specs.
+Der Compiler muss im PATH liegen. Alternativ kann `ARM_GCC` auf die
+Compilerdatei gesetzt werden. Im Repository-Verzeichnis ausführen:
 
-## Noch zu ergÃ¤nzen
-
-Echtes Anschlussbild, verwendetes Board/Transceiver, Gegenstelle, reproduzierbares Messprotokoll und klar benannte eigene Entwicklungsanteile. Es wurden keine Fotos, Messwerte oder Projektleistungen erfunden.
-
-Siehe auch [Herkunft und Lizenzen](THIRD_PARTY_NOTICES.md).
-
-## Reproduzierbarer Build ohne IDE
-
-Voraussetzungen: Python 3 und Arm-GCC mit Newlib/Nano-Specs. `arm-none-eabi-gcc` muss im PATH liegen; alternativ die Umgebungsvariable `ARM_GCC` auf die Compilerdatei setzen. Keine Bibliotheken werden heruntergeladen.
-
-Im Repository-Verzeichnis:
-
-```text
+```powershell
 python tools/build.py --profile Debug
 python tools/build.py --profile Release
 ```
 
-Die Ausgabe liegt unter `build/<Profil>/firmware.elf` und wird durch `.gitignore` ausgeschlossen. Der direkte Build beider Profile wurde mit Arm-GCC 12.3.1 geprüft. Das Skript verwendet dieselben Compiler-/Linkeroptionen; der gesonderte STM32CubeIDE-Import ist noch nicht geprüft. Build-Warnungen stehen in `BUILD_STATUS.txt`.
+Die Firmware-Dateien werden unter `build/<Profil>/` erzeugt. Dieser Ordner
+ist durch `.gitignore` ausgeschlossen.
+
+### Mit STM32CubeIDE
+
+1. `firmware/modbus_rtu_7` als bestehendes Projekt importieren.
+2. Den internen Projektnamen `modbus_rtu_7` beibehalten.
+3. Zunächst Debug und anschließend Release bauen.
+
+Die `.ioc` enthält nicht alle zusätzlichen Registereinstellungen aus `modbus.c`.
+Bei einer Neugenerierung müssen diese Einstellungen abgeglichen werden.
+
+## Entwicklungs- und Prüfstand
+
+Debug und Release wurden laut Build-Protokoll vom 03.11.2026 mit Arm-GCC 12.3.1
+kompiliert und gelinkt. Compiler- und Linkerwarnungen sind dokumentiert.
+Ein vollständiger STM32CubeIDE-Import und Hardwaretests dieser Kopie stehen aus.
+
+Die Fehlerbehandlung wird weiterentwickelt: Timeout/Retry sowie die vollständige
+Prüfung von Antwortadresse, Funktionscode, Länge und Modbus-Exceptions fehlen
+im vorliegenden Modul. Weitere Punkte zur CRC-Fehlerbehandlung und konsistenten
+ADC-Wertübernahme stehen im [Prüfplan](docs/VALIDIERUNG.md).
+
+Für eine nachvollziehbare Hardware-Demonstration sind der tatsächliche Aufbau,
+die Gegenstelle und die Messergebnisse zu dokumentieren.
+
+## Herkunft und Lizenzen
+
+[Hinweise zu Komponenten, Codeherkunft und Lizenzen](THIRD_PARTY_NOTICES.md)
+gehören zu diesem Projekt.
