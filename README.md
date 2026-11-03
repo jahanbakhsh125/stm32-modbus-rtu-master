@@ -94,7 +94,3 @@ ADC-Wertübernahme stehen im [Prüfplan](docs/VALIDIERUNG.md).
 Für eine nachvollziehbare Hardware-Demonstration sind der tatsächliche Aufbau,
 die Gegenstelle und die Messergebnisse zu dokumentieren.
 
-## Herkunft und Lizenzen
-
-[Hinweise zu Komponenten, Codeherkunft und Lizenzen](THIRD_PARTY_NOTICES.md)
-gehören zu diesem Projekt.
